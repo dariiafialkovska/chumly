@@ -1,4 +1,5 @@
-// components/cards/EventCard.jsx
+'use client';
+
 import React from 'react';
 import { Calendar, MapPin, Users, CreditCard } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,6 +22,13 @@ const EventCard = ({ title, date, location, attendees, amount, status }) => {
     }
   };
 
+  // 🧠 Defensive checks
+  const formattedDate = typeof date?.toDate === 'function'
+    ? date.toDate().toLocaleDateString()
+    : date || 'No date';
+
+  const attendeeCount = Array.isArray(attendees) ? attendees.length : attendees || 0;
+
   return (
     <Card className={`${componentStyles.cardHover} ${componentStyles.statsCard}`}>
       <CardContent className="p-4">
@@ -29,27 +37,29 @@ const EventCard = ({ title, date, location, attendees, amount, status }) => {
             className={`font-semibold text-${colors.gray[900]} text-sm`} 
             style={{ fontFamily: 'Libre Baskerville, serif' }}
           >
-            {title}
+            {title || 'Untitled Event'}
           </h3>
-          <Badge className={`text-xs ${statusColors[status].bg} ${statusColors[status].text}`}>
-            {status}
-          </Badge>
+          {status && statusColors[status] && (
+            <Badge className={`text-xs ${statusColors[status].bg} ${statusColors[status].text}`}>
+              {status}
+            </Badge>
+          )}
         </div>
         <div className={`space-y-2 text-sm text-${colors.gray[600]}`}>
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4" />
-            <span>{date}</span>
+            <span>{formattedDate}</span>
           </div>
           <div className="flex items-center space-x-2">
             <MapPin className="w-4 h-4" />
-            <span>{location}</span>
+            <span>{location || 'No location'}</span>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
-              <span>{attendees} attending</span>
+              <span>{attendeeCount} attending</span>
             </div>
-            {amount && (
+            {amount !== undefined && amount !== null && (
               <div className={`flex items-center space-x-1 text-${colors.success[600]} font-medium`}>
                 <CreditCard className="w-4 h-4" />
                 <span>${amount}</span>

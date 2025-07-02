@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import AppShell from '@/components/layout/AppShell';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import AddExpenseModal from '@/components/expenses/AddExpenseModal';
 
 export default function EventDetailsPage() {
   const { id } = useParams();
@@ -27,6 +28,8 @@ export default function EventDetailsPage() {
         if (!snap.exists()) return;
 
         const data = snap.data();
+        const creatorSnap = await getDoc(doc(db, 'users', data.createdBy));
+        const createdByUser = creatorSnap.exists() ? creatorSnap.data() : { name: 'Unknown' };
 
         // Fetch user data for attendees
         const attendeesDetailed = await Promise.all(
@@ -36,7 +39,7 @@ export default function EventDetailsPage() {
           })
         );
 
-        setEvent({ ...data, attendeesDetailed });
+        setEvent({ ...data, attendeesDetailed, createdByUser });
         setForm({ name: data.name, description: data.description, status: data.status });
       } catch (err) {
         console.error(err);
@@ -81,18 +84,25 @@ export default function EventDetailsPage() {
         <div className="bg-white p-6 rounded-xl shadow-md flex flex-col sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1 flex-1">
             {editing ? (
-              <>
-                <Input
-                  className="text-xl font-bold"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                />
-                <Textarea
-                  placeholder="Event description"
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                />
-              </>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">Event Name</label>
+                  <Input
+                    className="text-base"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">Description</label>
+                  <Textarea
+                    placeholder="Event description"
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  />
+                </div>
+              </div>
+
             ) : (
               <>
                 <h1 className="text-2xl font-bold text-gray-900">{event.name}</h1>
@@ -101,24 +111,25 @@ export default function EventDetailsPage() {
             )}
           </div>
           <div className="text-right space-y-1 pt-4 sm:pt-0">
-            <Badge
-              variant="outline"
-              className={`capitalize border-${colors.gray[200]} text-${colors.gray[600]}`}
-            >
-              {editing ? (
-                <select
-                  className="text-sm bg-transparent outline-none"
-                  value={form.status}
-                  onChange={(e) => setForm({ ...form, status: e.target.value })}
-                >
-                  <option value="upcoming">Upcoming</option>
-                  <option value="ongoing">Ongoing</option>
-                  <option value="completed">Completed</option>
-                </select>
-              ) : (
-                event.status
-              )}
-            </Badge>
+            {editing ? (
+              <select
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+                className="border border-gray-300 rounded-md text-sm px-2 py-1 bg-white text-gray-700 focus:outline-none"
+              >
+                <option value="upcoming">Upcoming</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="completed">Completed</option>
+              </select>
+            ) : (
+              <Badge
+                variant="outline"
+                className={`capitalize border-${colors.gray[200]} text-${colors.gray[600]}`}
+              >
+                {event.status}
+              </Badge>
+            )}
+
             <p className="text-xs text-gray-400">
               Created {event.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}
             </p>
@@ -129,7 +140,7 @@ export default function EventDetailsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-lg shadow-sm space-y-2">
             <p className="text-xs text-gray-400">Created By</p>
-            <p className="font-medium text-gray-800">{event.createdBy}</p>
+            <p className="font-medium text-gray-800">{event.createdByUser?.name || 'Unknown'}</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm space-y-2">
             <p className="text-xs text-gray-400">Attendees</p>
