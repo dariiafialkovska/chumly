@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Badge } from '@/components/ui/badge';
 import { colors } from '@/lib/colors';
@@ -12,6 +12,8 @@ import AppShell from '@/components/layout/AppShell';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import AddExpenseModal from '@/components/expenses/AddExpenseModal';
+import ExpenseCard from '@/components/expenses/ExpenseCard';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 export default function EventDetailsPage() {
   const { id } = useParams();
@@ -19,6 +21,11 @@ export default function EventDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ name: '', description: '', status: '' });
+  const [expenseModalOpen, setExpenseModalOpen] = useState(false);
+  const [sectionModalOpen, setSectionModalOpen] = useState(false);
+  const [expenses, setExpenses] = useState([]);
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -28,10 +35,10 @@ export default function EventDetailsPage() {
         if (!snap.exists()) return;
 
         const data = snap.data();
+        const sections = data.sections || {};
         const creatorSnap = await getDoc(doc(db, 'users', data.createdBy));
         const createdByUser = creatorSnap.exists() ? creatorSnap.data() : { name: 'Unknown' };
 
-        // Fetch user data for attendees
         const attendeesDetailed = await Promise.all(
           (data.attendees || []).map(async (uid) => {
             const userSnap = await getDoc(doc(db, 'users', uid));
@@ -39,7 +46,41 @@ export default function EventDetailsPage() {
           })
         );
 
-        setEvent({ ...data, attendeesDetailed, createdByUser });
+        const expensesQuery = query(
+          collection(db, 'expenses'),
+          where('eventId', '==', id)
+        );
+        const expenseSnapshot = await getDocs(expensesQuery);
+
+        const expenseList = await Promise.all(expenseSnapshot.docs.map(async (docSnap) => {
+          const data = docSnap.data();
+          let paidByName = 'Unknown';
+          if (data.paidBy) {
+            try {
+              const paidBySnap = await getDoc(doc(db, 'users', data.paidBy));
+              paidByName = paidBySnap.exists() ? paidBySnap.data().name : 'Unknown';
+            } catch (err) {
+              console.warn('Failed to fetch paidBy user:', err);
+            }
+          }
+
+          const sharedWithNames = await Promise.all(
+            (data.sharedWith || []).map(async (uid) => {
+              const snap = await getDoc(doc(db, 'users', uid));
+              return snap.exists() ? snap.data().name : 'Unknown';
+            })
+          );
+
+          return {
+            id: docSnap.id,
+            ...data,
+            paidByName,
+            sharedWithNames
+          };
+        }));
+
+        setExpenses(expenseList);
+        setEvent({ ...data, attendeesDetailed, createdByUser, sections });
         setForm({ name: data.name, description: data.description, status: data.status });
       } catch (err) {
         console.error(err);
@@ -64,6 +105,16 @@ export default function EventDetailsPage() {
     }
   };
 
+  const handleAddSection = async (sectionKey) => {
+    const updatedSections = {
+      ...event.sections,
+      [sectionKey]: true,
+    };
+    await updateDoc(doc(db, 'events', id), { sections: updatedSections });
+    setEvent({ ...event, sections: updatedSections });
+    if (sectionKey === 'expenses') setExpenseModalOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-[60vh] text-gray-500">
@@ -79,8 +130,6 @@ export default function EventDetailsPage() {
   return (
     <AppShell>
       <div className="max-w-4xl mx-auto mt-10 px-4 space-y-6">
-
-        {/* Header */}
         <div className="bg-white p-6 rounded-xl shadow-md flex flex-col sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1 flex-1">
             {editing ? (
@@ -102,7 +151,6 @@ export default function EventDetailsPage() {
                   />
                 </div>
               </div>
-
             ) : (
               <>
                 <h1 className="text-2xl font-bold text-gray-900">{event.name}</h1>
@@ -129,14 +177,12 @@ export default function EventDetailsPage() {
                 {event.status}
               </Badge>
             )}
-
             <p className="text-xs text-gray-400">
               Created {event.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}
             </p>
           </div>
         </div>
 
-        {/* Details */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-lg shadow-sm space-y-2">
             <p className="text-xs text-gray-400">Created By</p>
@@ -157,25 +203,80 @@ export default function EventDetailsPage() {
           </div>
         </div>
 
-        {/* Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white p-5 rounded-xl shadow-md flex items-center gap-4">
-            <CreditCard className="text-indigo-500" />
-            <div>
-              <p className="text-gray-700 font-semibold">Expenses</p>
-              <p className="text-sm text-gray-500">Coming soon</p>
+        {event.sections?.expenses && (
+          <div className="bg-white p-5 rounded-xl shadow-md">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <CreditCard className="text-indigo-500" />
+                <p className="text-gray-700 font-semibold">Expenses</p>
+              </div>
+              <Button onClick={() => setExpenseModalOpen(true)}>+ Add Expense</Button>
             </div>
-          </div>
-          <div className="bg-white p-5 rounded-xl shadow-md flex items-center gap-4">
-            <Calendar className="text-purple-500" />
-            <div>
-              <p className="text-gray-700 font-semibold">Reservations</p>
-              <p className="text-sm text-gray-500">Coming soon</p>
+
+            <div className="space-y-3 pt-4">
+              {expenses.length === 0 ? (
+                <p className="text-sm text-gray-500">No expenses yet.</p>
+              ) : (
+                expenses.map((expense) => (
+                  <ExpenseCard
+                    key={expense.id}
+                    description={expense.description}
+                    amount={expense.amount}
+                    paidBy={expense.paidByName}
+                    currency={expense.currency}
+                    splitType={expense.splitType}
+                    splitDetails={expense.splitDetails}
+                    getUserName={(uid) =>
+                      event.attendeesDetailed.find((u) => u.uid === uid)?.name || uid
+                    }
+                    onEdit={() => {
+                      setEditingExpense(expense);
+                      setEditModalOpen(true);
+                    }}
+                  />
+
+
+                ))
+              )}
             </div>
+
+
           </div>
+        )}
+
+        <Dialog open={sectionModalOpen} onOpenChange={setSectionModalOpen}>
+          <DialogContent>
+            <div className="space-y-3">
+              <DialogTitle className="text-lg font-semibold">
+                Add a Section
+              </DialogTitle>              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  handleAddSection('expenses');
+                  setSectionModalOpen(false);
+                }}
+              >
+                💰 Expenses
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  handleAddSection('reservations');
+                  setSectionModalOpen(false);
+                }}
+              >
+                📅 Reservations
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <div className="pt-4">
+          <Button onClick={() => setSectionModalOpen(true)}>+ Add Section</Button>
         </div>
 
-        {/* Actions */}
         <div className="flex justify-between pt-6">
           <Button variant="outline" onClick={() => setEditing(!editing)}>
             {editing ? 'Cancel' : (
@@ -187,11 +288,31 @@ export default function EventDetailsPage() {
           {editing && (
             <Button onClick={handleSave}>Save Changes</Button>
           )}
-          {!editing && (
-            <Button onClick={() => alert("Add feature coming soon")}>+ Add Section</Button>
-          )}
         </div>
       </div>
+
+      <AddExpenseModal
+        open={editModalOpen}
+        onClose={() => {
+          setEditModalOpen(false);
+          setEditingExpense(null);
+        }}
+        eventId={id}
+        attendees={event.attendeesDetailed}
+        initialData={editingExpense}
+        onSave={() => {
+          setEditModalOpen(false);
+          setEditingExpense(null);
+
+        }}
+      />
+      <AddExpenseModal
+        open={expenseModalOpen}
+        onClose={() => setExpenseModalOpen(false)}
+        eventId={id}
+        attendees={event.attendeesDetailed}
+      />
+
     </AppShell>
   );
 }

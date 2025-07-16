@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, Users, MapPin, CreditCard } from 'lucide-react';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
@@ -80,29 +80,38 @@ const Dashboard = () => {
           </div>
 
           {/* Recent Events */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className={`text-xl font-semibold text-${colors.gray[900]}`}>Recent Events</h2>
-              {/* add a button to go /to events */}
-              <Button variant="outline" className={`text-${colors.primary[500]} border-${colors.primary[500]}`} onClick={() => window.location.href = '/events'}>
-                View All
-              </Button>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {events.map((event, index) => (
-                <EventCard
-                  key={event.id || index}
-                  title={event.name || 'Untitled'}
-                  date={event.date}
-                  location={event.location}
-                  attendees={event.attendees}
-                  amount={event.amount}
-                  status={event.status}
-                />
-              ))}
+        
+<div>
+  <div className="flex items-center justify-between mb-4">
+    <h2 className={`text-xl font-semibold text-${colors.gray[900]}`}>Recent Events</h2>
+    <Button
+      variant="outline"
+      className={`text-${colors.primary[500]} border-${colors.primary[500]}`}
+      onClick={() => window.location.href = '/events'}
+    >
+      View All
+    </Button>
+  </div>
 
-            </div>
-          </div>
+ <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+  {events.map((event, index) => (
+    <Link
+      href={`/events/${event.id}`}
+      key={event.id || index}
+      className="block" 
+    >
+      <EventCard
+        title={event.name || 'Untitled'}
+        date={event.date}
+        location={event.location}
+        attendees={event.attendees}
+        amount={event.amount}
+        status={event.status}
+      />
+    </Link>
+  ))}
+</div>
+</div>
 
           {/* Quick Actions */}
           <QuickActions />
