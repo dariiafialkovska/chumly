@@ -34,6 +34,10 @@ export default function AddExpenseModal({ open, onClose, eventId, attendees, ini
       // Add mode
       await addDoc(collection(db, 'expenses'), expenseData);
     }
+    if (totalSplit > parseFloat(form.amount || 0)) {
+      return; // Don't proceed if overpaid
+    }
+
 
     onClose();
   };
@@ -56,6 +60,8 @@ export default function AddExpenseModal({ open, onClose, eventId, attendees, ini
   });
   const totalSplit = form.splitDetails.reduce((sum, s) => sum + (parseFloat(s.amount) || 0), 0);
   const isMismatch = parseFloat(form.amount) !== totalSplit;
+  const isOverSplit = totalSplit > parseFloat(form.amount || 0);
+
   const currencySymbol = getCurrencySymbol(form.currency || 'TRY');
 
 
@@ -97,8 +103,8 @@ export default function AddExpenseModal({ open, onClose, eventId, attendees, ini
             onChange={(e) => setForm({ ...form, amount: e.target.value })}
           />
           <select
-            value={paidBy}
-            onChange={(e) => setPaidBy(e.target.value)}
+            value={form.paidBy}
+            onChange={(e) => setForm({ ...form, paidBy: e.target.value })}
             className="w-full border border-gray-300 rounded-md p-2 text-sm"
           >
             <option value="">Paid by...</option>
@@ -106,6 +112,7 @@ export default function AddExpenseModal({ open, onClose, eventId, attendees, ini
               <option key={u.uid} value={u.uid}>{u.name}</option>
             ))}
           </select>
+
           <select
             value={form.currency}
             onChange={(e) => setForm({ ...form, currency: e.target.value })}
@@ -136,6 +143,17 @@ export default function AddExpenseModal({ open, onClose, eventId, attendees, ini
             ))}
           </div>
           {isMismatch && (
+            <p className="text-sm text-red-500">
+              Total split ({currencySymbol}{totalSplit.toFixed(2)}) does not match expense amount ({currencySymbol}{form.amount})
+            </p>
+          )}
+          {isOverSplit && (
+            <p className="text-sm text-red-500">
+              Total split ({currencySymbol}{totalSplit.toFixed(2)}) exceeds total amount ({currencySymbol}{form.amount})
+            </p>
+          )}
+
+          {!isOverSplit && isMismatch && (
             <p className="text-sm text-red-500">
               Total split ({currencySymbol}{totalSplit.toFixed(2)}) does not match expense amount ({currencySymbol}{form.amount})
             </p>

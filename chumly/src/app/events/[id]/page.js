@@ -14,19 +14,35 @@ import { Textarea } from '@/components/ui/textarea';
 import AddExpenseModal from '@/components/expenses/AddExpenseModal';
 import ExpenseCard from '@/components/expenses/ExpenseCard';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import AddReservationModal from '@/components/reservations/AddReservationModal';
+import ReservationCard from '@/components/reservations/ReservationCard';
+import AddChecklistModal from '@/components/checklists/AddChecklistModal';
+import ChecklistCard from '@/components/checklists/ChecklistCard';
+import AddNoteModal from '@/components/notes/AddNoteModal';
+import { getAuth } from 'firebase/auth';
 
 export default function EventDetailsPage() {
   const { id } = useParams();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [form, setForm] = useState({ name: '', description: '', status: '' });
+  const [form, setForm] = useState({ name: '', description: '', status: '', startDate: '' });
   const [expenseModalOpen, setExpenseModalOpen] = useState(false);
   const [sectionModalOpen, setSectionModalOpen] = useState(false);
   const [expenses, setExpenses] = useState([]);
   const [editingExpense, setEditingExpense] = useState(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
-
+  const [reservationModalOpen, setReservationModalOpen] = useState(false);
+  const [reservations, setReservations] = useState([]);
+  const [editingReservation, setEditingReservation] = useState(null);
+  const [checklist, setChecklist] = useState([]);
+  const [checklistModalOpen, setChecklistModalOpen] = useState(false);
+  const [editingChecklistItem, setEditingChecklistItem] = useState(null);
+  const [notes, setNotes] = useState([]);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState(null);
+const auth = getAuth();
+const currentUser = auth.currentUser;
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -81,7 +97,55 @@ export default function EventDetailsPage() {
 
         setExpenses(expenseList);
         setEvent({ ...data, attendeesDetailed, createdByUser, sections });
-        setForm({ name: data.name, description: data.description, status: data.status });
+        setForm({
+          name: data.name,
+          description: data.description,
+          status: data.status,
+          startDate: data.startDate?.toDate().toISOString().split('T')[0] || '',
+        });
+        // Get reservations
+        const reservationsQuery = query(
+          collection(db, 'reservations'),
+          where('eventId', '==', id)
+        );
+        const reservationSnapshot = await getDocs(reservationsQuery);
+
+        const reservationList = reservationSnapshot.docs.map(docSnap => ({
+          id: docSnap.id,
+          ...docSnap.data(),
+        }));
+
+        setReservations(reservationList);
+
+        const checklistQuery = query(
+          collection(db, 'checklists'),
+          where('eventId', '==', id)
+        );
+        const checklistSnap = await getDocs(checklistQuery);
+        const checklistItems = checklistSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setChecklist(checklistItems); // ← useState needed
+        const notesQuery = query(
+          collection(db, 'notes'),
+          where('eventId', '==', id)
+        );
+        const noteSnapshot = await getDocs(notesQuery);
+
+        const noteList = await Promise.all(
+          noteSnapshot.docs.map(async (docSnap) => {
+            const data = docSnap.data();
+            const authorSnap = await getDoc(doc(db, 'users', data.authorId));
+            const authorName = authorSnap.exists() ? authorSnap.data().name : 'Unknown';
+            return {
+              id: docSnap.id,
+              ...data,
+              authorName,
+            };
+          })
+        );
+        setNotes(noteList); // ✅ Add useState for `notes`
       } catch (err) {
         console.error(err);
       } finally {
@@ -89,6 +153,9 @@ export default function EventDetailsPage() {
       }
     };
     fetchEvent();
+
+
+
   }, [id]);
 
   const handleSave = async () => {
@@ -113,6 +180,7 @@ export default function EventDetailsPage() {
     await updateDoc(doc(db, 'events', id), { sections: updatedSections });
     setEvent({ ...event, sections: updatedSections });
     if (sectionKey === 'expenses') setExpenseModalOpen(true);
+    if (sectionKey === 'reservations') setReservationModalOpen(true);
   };
 
   if (loading) {
@@ -150,11 +218,24 @@ export default function EventDetailsPage() {
                     onChange={(e) => setForm({ ...form, description: e.target.value })}
                   />
                 </div>
+                <div>
+                  <label className="text-sm text-gray-600 block mb-1">Event Date</label>
+                  <Input
+                    type="date"
+                    value={form.startDate}
+                    onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                  />
+                </div>
+
               </div>
             ) : (
               <>
                 <h1 className="text-2xl font-bold text-gray-900">{event.name}</h1>
                 <p className="text-sm text-gray-600">{event.description || 'No description provided.'}</p>
+                <p className="text-sm text-gray-600">
+                  📅 {event.startDate?.toDate().toLocaleDateString() || 'No date'}
+                </p>
+
               </>
             )}
           </div>
@@ -243,6 +324,103 @@ export default function EventDetailsPage() {
 
           </div>
         )}
+        {event.sections?.reservations && (
+          <div className="bg-white p-5 rounded-xl shadow-md">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="text-blue-500" />
+                <p className="text-gray-700 font-semibold">Reservations</p>
+              </div>
+              <Button onClick={() => setReservationModalOpen(true)}>+ Add Reservation</Button>
+            </div>
+
+            <div className="space-y-3 pt-4">
+              {reservations.length === 0 ? (
+                <p className="text-sm text-gray-500">No reservations yet.</p>
+              ) : (
+                reservations.map((reservation) => (
+                  <ReservationCard
+                    key={reservation.id}
+                    title={reservation.title}
+                    date={reservation.date?.toDate?.()}
+                    location={reservation.location}
+                    notes={reservation.notes}
+                    reservedBy={reservation.reservedBy}
+                    getUserName={(uid) =>
+                      event.attendeesDetailed.find((u) => u.uid === uid)?.name || uid
+                    }
+                    onEdit={() => {
+                      setEditingReservation(reservation);
+                      setReservationModalOpen(true);
+                    }}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {event.sections?.checklist && (
+          <div className="bg-white p-5 rounded-xl shadow-md">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-semibold text-gray-700">📝 Checklist</span>
+              </div>
+              <Button onClick={() => setChecklistModalOpen(true)}>+ Add Task</Button>
+            </div>
+
+            {checklist.length === 0 ? (
+              <p className="text-sm text-gray-500">No tasks yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {checklist.map((task, index) => (
+                  <ChecklistCard
+                    key={index}
+                    task={task}
+                    onToggle={(item) => {
+                      const updated = checklist.map((t) =>
+                        t === item ? { ...t, done: !t.done } : t
+                      );
+                      setChecklist(updated);
+                    }}
+                    onEdit={(item) => {
+                      setEditingChecklistItem(item);
+                      setChecklistModalOpen(true);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {event.sections?.notes && (
+          <div className="bg-white p-5 rounded-xl shadow-md">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-2">
+                <p className="text-gray-700 font-semibold">📝 Notes</p>
+              </div>
+              <Button onClick={() => setNoteModalOpen(true)}>+ Add Note</Button>
+            </div>
+
+            {notes.length === 0 ? (
+              <p className="text-sm text-gray-500">No notes yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {notes.map((note) => (
+                  <div key={note.id} className="bg-gray-50 p-3 rounded-md border">
+                    <p className="text-sm text-gray-800 whitespace-pre-wrap">{note.content}</p>
+                    <p className="text-xs text-gray-400 mt-2">
+                      by {note.authorName} • {note.updatedAt?.toDate().toLocaleString() || 'N/A'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+
 
         <Dialog open={sectionModalOpen} onOpenChange={setSectionModalOpen}>
           <DialogContent>
@@ -269,6 +447,27 @@ export default function EventDetailsPage() {
               >
                 📅 Reservations
               </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  handleAddSection('checklist');
+                  setSectionModalOpen(false);
+                }}
+              >
+                📝 Checklist
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => {
+                  handleAddSection('notes');
+                  setSectionModalOpen(false);
+                }}
+              >
+                🗒️ Notes
+              </Button>
+
             </div>
           </DialogContent>
         </Dialog>
@@ -312,6 +511,51 @@ export default function EventDetailsPage() {
         eventId={id}
         attendees={event.attendeesDetailed}
       />
+      <AddReservationModal
+        open={reservationModalOpen}
+        onClose={() => setReservationModalOpen(false)}
+        eventId={id}
+        attendees={event.attendeesDetailed}
+      />
+      <AddChecklistModal
+        open={checklistModalOpen}
+        onClose={() => {
+          setChecklistModalOpen(false);
+          setEditingChecklistItem(null);
+        }}
+        eventId={id}
+        initialData={editingChecklistItem}
+        onSave={(data) => {
+          if (editingChecklistItem) {
+            setChecklist((prev) =>
+              prev.map((item) =>
+                item === editingChecklistItem ? { ...item, ...data } : item
+              )
+            );
+          } else {
+            setChecklist((prev) => [...prev, { ...data, done: false }]);
+          }
+          setChecklistModalOpen(false);
+          setEditingChecklistItem(null);
+        }}
+      />
+      <AddNoteModal
+        open={noteModalOpen}
+        onClose={() => {
+          setNoteModalOpen(false);
+          setEditingNote(null);
+        }}
+        eventId={id}
+        user={currentUser} // Make sure you pass current user
+        initialData={editingNote}
+        onSave={() => {
+          setNoteModalOpen(false);
+          setEditingNote(null);
+          // optionally refetch notes
+        }}
+      />
+
+
 
     </AppShell>
   );

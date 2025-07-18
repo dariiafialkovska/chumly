@@ -30,7 +30,7 @@ export default function RegisterPage() {
         provider: 'email',
       });
 
-      router.push('/dashboard');
+router.push('/dashboard?newUser=true');
     } catch (err) {
       setError(err.message);
     }
@@ -50,7 +50,7 @@ export default function RegisterPage() {
         provider: 'google',
       }, { merge: true });
 
-      router.push('/dashboard');
+router.push('/dashboard?newUser=true');
     } catch (err) {
       setError('Google sign-in failed');
     }

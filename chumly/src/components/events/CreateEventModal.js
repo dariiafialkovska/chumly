@@ -3,23 +3,30 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/contexts/UserContext';
+import { nanoid } from 'nanoid'; // ✅ import nanoid
 
 export default function CreateEventModal({ onClose }) {
   const router = useRouter();
   const user = useUser();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [status, setStatus] = useState('upcoming');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      if (!startDate) {
+        setError('Please select a date.');
+        return;
+      }
+
       const docRef = await addDoc(collection(db, 'events'), {
         name,
         description,
@@ -27,7 +34,11 @@ export default function CreateEventModal({ onClose }) {
         createdAt: serverTimestamp(),
         createdBy: user.uid,
         attendees: [user.uid],
+        inviteToken: nanoid(10), 
+
+        startDate: Timestamp.fromDate(new Date(startDate)),
       });
+
       onClose();
       router.push(`/events/${docRef.id}`);
     } catch (err) {
@@ -43,11 +54,20 @@ export default function CreateEventModal({ onClose }) {
         <form onSubmit={handleSubmit} className="space-y-3">
           <Input placeholder="Event Name" value={name} onChange={e => setName(e.target.value)} required />
           <Textarea placeholder="Description" value={description} onChange={e => setDescription(e.target.value)} />
+          
+          <Input
+            type="date"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+            required
+          />
+
           <select value={status} onChange={e => setStatus(e.target.value)} className="w-full border p-2 rounded-md">
             <option value="upcoming">Upcoming</option>
             <option value="ongoing">Ongoing</option>
             <option value="completed">Completed</option>
           </select>
+
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <Button className="w-full">Create</Button>
         </form>

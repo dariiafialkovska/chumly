@@ -3,7 +3,7 @@
 // app/dashboard/page.jsx
 import React, { useState, useEffect } from 'react';
 import { Calendar, Users, MapPin, CreditCard } from 'lucide-react';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,8 @@ import EventCard from '@/components/cards/EventCard';
 import StatsCard from '@/components/cards/StatsCard';
 import QuickActions from '@/components/dashboard/QuickActions';
 import { colors, componentStyles } from '@/lib/colors';
-
+import { useSearchParams } from 'next/navigation';
+import CompleteProfileModal from '@/components/auth/CompleteProfileModal';
 import { useUser } from '@/contexts/UserContext';
 
 
@@ -24,9 +25,12 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const upcomingEventsCount = events.filter(e => e.status === 'upcoming').length;
   const pendingExpensesCount = events.filter(e => e.amount > 0 && e.status !== 'completed').length;
+  const searchParams = useSearchParams();
+  const isNewUser = searchParams.get('newUser') === 'true';
+  const [showProfileModal, setShowProfileModal] = useState(isNewUser);
 
   const stats = [
-{ icon: Calendar, title: "Events", value: events.length.toString(), subtitle: "This month", colorType: "primary" },
+    { icon: Calendar, title: "Events", value: events.length.toString(), subtitle: "This month", colorType: "primary" },
     { icon: Users, title: "Groups", value: "5", subtitle: "Active", colorType: "success" },
     { icon: CreditCard, title: "Expenses", value: "$342", subtitle: "This month", colorType: "warning" },
     { icon: MapPin, title: "Locations", value: "8", subtitle: "Saved", colorType: "info" },
@@ -53,71 +57,80 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className={`min-h-screen bg-${colors.gray[50]}`} style={{ fontFamily: 'Libre Baskerville, serif' }}>
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
+    <>
+      <div className={`min-h-screen bg-${colors.gray[50]}`} style={{ fontFamily: 'Libre Baskerville, serif' }}>
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
 
-      <div className="lg:ml-16 transition-all duration-300">
-        <Header onMenuClick={() => setSidebarOpen(true)} />
+        <div className="lg:ml-16 transition-all duration-300">
+          <Header onMenuClick={() => setSidebarOpen(true)} />
 
-        <main className="p-4 lg:p-6 space-y-6">
-          {/* Welcome Section */}
-          <div className={`bg-gradient-to-r ${colors.gradients.primaryDark} rounded-2xl p-6`}>
-            <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.name || 'User'}!</h1>
-            <p className={`text-${colors.primary[100]}`}>
-              You have {upcomingEventsCount} upcoming {upcomingEventsCount === 1 ? 'event' : 'events'} and {pendingExpensesCount} pending {pendingExpensesCount === 1 ? 'expense' : 'expenses'} to settle.
-            </p>
+          <main className="p-4 lg:p-6 space-y-6">
+            {/* Welcome Section */}
+            <div className={`bg-gradient-to-r ${colors.gradients.primaryDark} rounded-2xl p-6`}>
+              <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.name || 'User'}!</h1>
+              <p className={`text-${colors.primary[100]}`}>
+                You have {upcomingEventsCount} upcoming {upcomingEventsCount === 1 ? 'event' : 'events'} and {pendingExpensesCount} pending {pendingExpensesCount === 1 ? 'expense' : 'expenses'} to settle.
+              </p>
 
-          </div>
+            </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {stats.map((stat, index) => (
-              <StatsCard key={index} {...stat} />
-            ))}
-          </div>
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {stats.map((stat, index) => (
+                <StatsCard key={index} {...stat} />
+              ))}
+            </div>
 
-          {/* Recent Events */}
-        
-<div>
-  <div className="flex items-center justify-between mb-4">
-    <h2 className={`text-xl font-semibold text-${colors.gray[900]}`}>Recent Events</h2>
-    <Button
-      variant="outline"
-      className={`text-${colors.primary[500]} border-${colors.primary[500]}`}
-      onClick={() => window.location.href = '/events'}
-    >
-      View All
-    </Button>
-  </div>
+            {/* Recent Events */}
 
- <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-  {events.map((event, index) => (
-    <Link
-      href={`/events/${event.id}`}
-      key={event.id || index}
-      className="block" 
-    >
-      <EventCard
-        title={event.name || 'Untitled'}
-        date={event.date}
-        location={event.location}
-        attendees={event.attendees}
-        amount={event.amount}
-        status={event.status}
-      />
-    </Link>
-  ))}
-</div>
-</div>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className={`text-xl font-semibold text-${colors.gray[900]}`}>Recent Events</h2>
+                <Button
+                  variant="outline"
+                  className={`text-${colors.primary[500]} border-${colors.primary[500]}`}
+                  onClick={() => window.location.href = '/events'}
+                >
+                  View All
+                </Button>
+              </div>
 
-          {/* Quick Actions */}
-          <QuickActions />
-        </main>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {events.map((event, index) => (
+                  <Link
+                    href={`/events/${event.id}`}
+                    key={event.id || index}
+                    className="block"
+                  >
+                    <EventCard
+                      title={event.name || 'Untitled'}
+                      startDate={event.startDate}
+                      location={event.location}
+                      attendees={event.attendees}
+                      amount={event.amount}
+                      status={event.status}
+                    />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <QuickActions />
+          </main>
+        </div>
       </div>
-    </div>
+      {user && (
+        <CompleteProfileModal
+          user={user}
+          open={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+        />
+      )}
+    </>
   );
 };
 

@@ -1,12 +1,12 @@
 'use client';
 
 import React from 'react';
-import { Calendar, MapPin, Users, CreditCard } from 'lucide-react';
+import { Calendar, MapPin, Users, CreditCard, Timer } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { colors, componentStyles } from '@/lib/colors';
 
-const EventCard = ({ title, date, location, attendees, amount, status }) => {
+const EventCard = ({ title, startDate, location, attendees, amount, status }) => {
   const statusColors = {
     upcoming: {
       bg: `bg-${colors.info[100]}`,
@@ -22,10 +22,25 @@ const EventCard = ({ title, date, location, attendees, amount, status }) => {
     }
   };
 
-  // 🧠 Defensive checks
-  const formattedDate = typeof date?.toDate === 'function'
-    ? date.toDate().toLocaleDateString()
-    : date || 'No date';
+  // Format date
+  const formattedDate = typeof startDate?.toDate === 'function'
+    ? startDate.toDate().toLocaleDateString()
+    : 'No date';
+
+  // Calculate days left
+  const getDaysLeft = () => {
+    if (!startDate || typeof startDate.toDate !== 'function') return null;
+    const eventDate = startDate.toDate();
+    const today = new Date();
+    const diffTime = eventDate.setHours(0, 0, 0, 0) - today.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    if (diffDays > 1) return `in ${diffDays} days`;
+    if (diffDays === 1) return 'tomorrow';
+    if (diffDays === 0) return 'today';
+    if (diffDays < 0) return `${Math.abs(diffDays)} days ago`;
+  };
+
+  const daysLeftText = getDaysLeft();
 
   const attendeeCount = Array.isArray(attendees) ? attendees.length : attendees || 0;
 
@@ -45,15 +60,25 @@ const EventCard = ({ title, date, location, attendees, amount, status }) => {
             </Badge>
           )}
         </div>
+
         <div className={`space-y-2 text-sm text-${colors.gray[600]}`}>
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4" />
             <span>{formattedDate}</span>
           </div>
+          
+          {daysLeftText && (
+            <div className="flex items-center space-x-2">
+              <Timer className="w-4 h-4" />
+              <span>{daysLeftText}</span>
+            </div>
+          )}
+
           <div className="flex items-center space-x-2">
             <MapPin className="w-4 h-4" />
             <span>{location || 'No location'}</span>
           </div>
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
