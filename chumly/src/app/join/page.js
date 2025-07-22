@@ -6,21 +6,30 @@ import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/fire
 import { db } from '@/lib/firebase';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/lib/hooks/useAuth'; // 👈 assumes you already have a hook for current user
+import { useAuth } from '@/lib/hooks/useAuth';
 
 export default function JoinEventPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-  const { currentUser } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
-  const [status, setStatus] = useState('loading'); // loading | success | error
+  const [status, setStatus] = useState('loading'); // 'loading' | 'success' | 'error'
   const [eventId, setEventId] = useState(null);
 
   useEffect(() => {
-    const tryJoinEvent = async () => {
-      if (!token || !currentUser) return;
+    if (!token || authLoading) return;
 
+    // If user is not logged in, store redirect and send to login
+    if (!user) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('redirectAfterLogin', `/join?token=${token}`);
+      }
+      router.push('/login');
+      return;
+    }
+
+    const joinEvent = async () => {
       try {
         const q = query(collection(db, 'events'), where('inviteToken', '==', token));
         const snap = await getDocs(q);
@@ -31,43 +40,50 @@ export default function JoinEventPage() {
         }
 
         const eventDoc = snap.docs[0];
-        const data = eventDoc.data();
-        const attendees = data.attendees || [];
+        const eventData = eventDoc.data();
+        const attendees = eventData.attendees || [];
 
-        if (!attendees.includes(currentUser.uid)) {
+        if (!attendees.includes(user.uid)) {
           await updateDoc(doc(db, 'events', eventDoc.id), {
-            attendees: [...attendees, currentUser.uid],
+            attendees: [...attendees, user.uid],
           });
         }
 
-        setEventId(eventDoc.id);
-        setStatus('success');
+        const eventPage = `/events/${eventDoc.id}`;
+router.replace(eventPage); // 👈 auto-navigate
+
       } catch (err) {
-        console.error(err);
+        console.error('Join event failed:', err);
         setStatus('error');
       }
     };
 
-    tryJoinEvent();
-  }, [token, currentUser]);
+    joinEvent();
+  }, [authLoading, token, user, router]);
 
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="animate-spin mr-2" />
-        Joining event...
+        <span>Joining event...</span>
       </div>
     );
   }
 
   if (status === 'error') {
-    return <div className="text-center text-red-500 mt-10">Invalid or expired invite token.</div>;
+    return (
+      <div className="text-center mt-10 space-y-4 text-red-500">
+        <h2>Invalid or expired invite token.</h2>
+        <Button onClick={() => router.push('/dashboard')}>Back to Dashboard</Button>
+      </div>
+    );
   }
 
-  return (
-    <div className="text-center mt-10 space-y-4">
-      <h1 className="text-xl font-semibold text-green-700">You've joined the event!</h1>
-      <Button onClick={() => router.push(`/events/${eventId}`)}>Go to Event</Button>
-    </div>
-  );
+return (
+  <div className="text-center mt-10 space-y-4">
+    <h1 className="text-xl font-semibold text-green-700">You've joined the event!</h1>
+    <Button onClick={() => router.push(`/events/${eventId}`)}>Go to Event</Button>
+  </div>
+);
+
 }

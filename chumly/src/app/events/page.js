@@ -2,30 +2,49 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AppShell from '@/components/layout/AppShell';
+import { useUser } from '@/contexts/UserContext'; // or wherever your auth hook is
 
 export default function EventsPage() {
+  const user = useUser(); // 🔑 get current user
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) return;
+
     const fetchEvents = async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'events'));
-        const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-        setEvents(data);
+        const createdQuery = query(collection(db, 'events'), where('createdBy', '==', user.uid));
+        const attendedQuery = query(collection(db, 'events'), where('attendees', 'array-contains', user.uid));
+
+        const [createdSnap, attendedSnap] = await Promise.all([
+          getDocs(createdQuery),
+          getDocs(attendedQuery)
+        ]);
+
+        const created = createdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const attended = attendedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Merge + remove duplicates
+        const allEvents = [...created, ...attended].filter(
+          (e, i, self) => i === self.findIndex(ev => ev.id === e.id)
+        );
+
+        setEvents(allEvents);
       } catch (err) {
         console.error('Failed to fetch events:', err);
       } finally {
         setLoading(false);
       }
     };
+
     fetchEvents();
-  }, []);
+  }, [user]);
 
   if (loading) {
     return (
@@ -46,7 +65,7 @@ export default function EventsPage() {
   return (
     <AppShell>
       <div className="max-w-4xl mx-auto px-4 mt-10 space-y-4">
-        <h1 className="text-2xl font-bold">All Events</h1>
+        <h1 className="text-2xl font-bold">Your Events</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {events.map((event) => (
             <Link

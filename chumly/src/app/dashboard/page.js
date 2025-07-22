@@ -27,8 +27,34 @@ const Dashboard = () => {
   const upcomingEventsCount = events.filter(e => e.status === 'upcoming').length;
   const pendingExpensesCount = events.filter(e => e.amount > 0 && e.status !== 'completed').length;
   const searchParams = useSearchParams();
-  const isNewUser = searchParams.get('newUser') === 'true';
-  const [showProfileModal, setShowProfileModal] = useState(isNewUser);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
+  useEffect(() => {
+    const checkProfileCompletion = async () => {
+      const newUser = searchParams.get('newUser') === 'true';
+
+      if (!user || !newUser) return;
+
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        const snap = await getDoc(userRef);
+        const data = snap.data();
+
+        const profileIncomplete = !data?.username || !data?.name;
+
+        if (profileIncomplete) {
+          setShowProfileModal(true);
+        } else {
+          // Profile is already complete → clean up URL param
+          window.history.replaceState(null, '', '/dashboard');
+        }
+      } catch (err) {
+        console.error('Failed to check profile completion:', err);
+      }
+    };
+
+    checkProfileCompletion();
+  }, [user, searchParams]);
 
   const stats = [
     { icon: Calendar, title: "Events", value: events.length.toString(), subtitle: "This month", colorType: "primary" },

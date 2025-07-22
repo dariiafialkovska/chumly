@@ -1,12 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
 import Link from 'next/link';
 
 export default function LoginPage() {
@@ -15,11 +15,27 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  const getRedirectPath = () => {
+    if (typeof window === 'undefined') return '/dashboard';
+
+    const stored = sessionStorage.getItem('redirectAfterLogin');
+    if (stored) {
+      sessionStorage.removeItem('redirectAfterLogin'); // Clean up
+      return stored;
+    }
+
+    const fromQuery = new URLSearchParams(window.location.search).get('redirect');
+    return fromQuery || '/dashboard';
+  };
+
+
+
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/dashboard');
+      const redirectPath = getRedirectPath();
+      router.push(redirectPath);
     } catch (err) {
       setError('Invalid email or password');
     }
@@ -29,8 +45,8 @@ export default function LoginPage() {
     try {
       const provider = new GoogleAuthProvider();
       const cred = await signInWithPopup(auth, provider);
-      await ensureUserInFirestore(cred.user);
-      router.push('/dashboard');
+      const isNewUser = await ensureUserInFirestore(cred.user);
+      router.push(isNewUser ? '/dashboard?newUser=true' : redirectPath);
     } catch (err) {
       setError('Google sign-in failed');
     }
@@ -39,17 +55,19 @@ export default function LoginPage() {
   const ensureUserInFirestore = async (user) => {
     const userRef = doc(db, 'users', user.uid);
     const snap = await getDoc(userRef);
-
     if (!snap.exists()) {
       await setDoc(userRef, {
         uid: user.uid,
         name: user.displayName || '',
-        username: '', // Let them choose it later in settings
+        username: '',
         email: user.email,
         provider: user.providerData[0]?.providerId || 'google',
       });
+      return true;
     }
+    return false;
   };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <form onSubmit={handleLogin} className="space-y-4 bg-white p-6 rounded-xl shadow-md w-[320px]">
@@ -63,13 +81,12 @@ export default function LoginPage() {
           Sign in with Google
         </Button>
         <div className="text-sm text-center text-gray-500">
-          Don't have an account?{' '}
+          Don&apos;t have an account?{' '}
           <Link href="/register" className="text-indigo-600 hover:underline">
             Register
           </Link>
         </div>
       </form>
-
     </div>
   );
 }
