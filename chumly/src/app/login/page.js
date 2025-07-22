@@ -7,6 +7,7 @@ import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,31 +25,31 @@ export default function LoginPage() {
     }
   };
 
-const handleGoogleLogin = async () => {
-  try {
-    const provider = new GoogleAuthProvider();
-    const cred = await signInWithPopup(auth, provider);
-    await ensureUserInFirestore(cred.user);
-    router.push('/dashboard');
-  } catch (err) {
-    setError('Google sign-in failed');
-  }
-};
+  const handleGoogleLogin = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const cred = await signInWithPopup(auth, provider);
+      await ensureUserInFirestore(cred.user);
+      router.push('/dashboard');
+    } catch (err) {
+      setError('Google sign-in failed');
+    }
+  };
 
-const ensureUserInFirestore = async (user) => {
-  const userRef = doc(db, 'users', user.uid);
-  const snap = await getDoc(userRef);
+  const ensureUserInFirestore = async (user) => {
+    const userRef = doc(db, 'users', user.uid);
+    const snap = await getDoc(userRef);
 
-  if (!snap.exists()) {
-    await setDoc(userRef, {
-      uid: user.uid,
-      name: user.displayName || '',
-      username: '', // Let them choose it later in settings
-      email: user.email,
-      provider: user.providerData[0]?.providerId || 'google',
-    });
-  }
-};
+    if (!snap.exists()) {
+      await setDoc(userRef, {
+        uid: user.uid,
+        name: user.displayName || '',
+        username: '', // Let them choose it later in settings
+        email: user.email,
+        provider: user.providerData[0]?.providerId || 'google',
+      });
+    }
+  };
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <form onSubmit={handleLogin} className="space-y-4 bg-white p-6 rounded-xl shadow-md w-[320px]">
@@ -61,7 +62,14 @@ const ensureUserInFirestore = async (user) => {
         <Button type="button" onClick={handleGoogleLogin} variant="outline" className="w-full">
           Sign in with Google
         </Button>
+        <div className="text-sm text-center text-gray-500">
+          Don't have an account?{' '}
+          <Link href="/register" className="text-indigo-600 hover:underline">
+            Register
+          </Link>
+        </div>
       </form>
+
     </div>
   );
 }

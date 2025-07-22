@@ -16,6 +16,7 @@ import { colors, componentStyles } from '@/lib/colors';
 import { useSearchParams } from 'next/navigation';
 import CompleteProfileModal from '@/components/auth/CompleteProfileModal';
 import { useUser } from '@/contexts/UserContext';
+import { query, where } from 'firebase/firestore';
 
 
 const Dashboard = () => {
@@ -40,12 +41,25 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const snapshot = await getDocs(collection(db, 'events'));
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setEvents(data);
+        const eventsRef = collection(db, 'events');
+        const q = query(
+          eventsRef,
+          where('attendees', 'array-contains', user.uid)
+        );
+        const snapshot = await getDocs(q);
+        const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Optional: Also get events created by user
+        const createdQ = query(eventsRef, where('createdBy', '==', user.uid));
+        const createdSnap = await getDocs(createdQ);
+        const createdEvents = createdSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        // Combine both and remove duplicates
+        const allEvents = [...data, ...createdEvents].filter(
+          (e, index, self) => index === self.findIndex(ev => ev.id === e.id)
+        );
+
+        setEvents(allEvents);
       } catch (err) {
         console.error('Error fetching events:', err);
       } finally {

@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useUser } from '@/contexts/UserContext';
-import { nanoid } from 'nanoid'; // ✅ import nanoid
-
+import { nanoid } from 'nanoid'; 
 export default function CreateEventModal({ onClose }) {
   const router = useRouter();
   const user = useUser();

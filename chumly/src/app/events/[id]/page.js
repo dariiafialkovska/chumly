@@ -41,8 +41,8 @@ export default function EventDetailsPage() {
   const [notes, setNotes] = useState([]);
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
-const auth = getAuth();
-const currentUser = auth.currentUser;
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
   useEffect(() => {
     const fetchEvent = async () => {
       try {
@@ -283,6 +283,15 @@ const currentUser = auth.currentUser;
             </div>
           </div>
         </div>
+        <Button
+          variant="outline"
+          onClick={() => {
+            navigator.clipboard.writeText(`${window.location.origin}/join?token=${event.inviteToken}`);
+            alert('Invite link copied!');
+          }}
+        >
+          🔗 Copy Invite Link
+        </Button>
 
         {event.sections?.expenses && (
           <div className="bg-white p-5 rounded-xl shadow-md">
