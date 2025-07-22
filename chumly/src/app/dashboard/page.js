@@ -105,11 +105,13 @@ const Dashboard = () => {
           <main className="p-4 lg:p-6 space-y-6">
             {/* Welcome Section */}
             <div className={`bg-gradient-to-r ${colors.gradients.primaryDark} rounded-2xl p-6`}>
-              <h1 className="text-2xl font-bold mb-2">Welcome back, {user?.name || 'User'}!</h1>
-              <p className={`text-${colors.primary[100]}`}>
+              <h1 className="text-4xl font-bold mb-2 text-teal-900">Welcome back, {user?.name || 'User'}!</h1>
+              {/*<p className={`text-${colors.primary[100]}`}>
                 You have {upcomingEventsCount} upcoming {upcomingEventsCount === 1 ? 'event' : 'events'} and {pendingExpensesCount} pending {pendingExpensesCount === 1 ? 'expense' : 'expenses'} to settle.
+              </p>*/}
+<p className={`text-${colors.primary[100]}`}>
+                Your next gathering starts here — let’s do it.
               </p>
-
             </div>
 
             {/* Stats Grid */}

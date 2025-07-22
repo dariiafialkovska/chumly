@@ -2,13 +2,18 @@ import { Libre_Baskerville} from "next/font/google";
 import "./globals.css";
 import AuthGuard from '@/components/auth/AuthGuard';
 import { UserProvider } from '@/contexts/UserContext';
-
+import { EB_Garamond } from "next/font/google";
 const libreBaskerville = Libre_Baskerville({
   subsets: ["latin"],
   variable: "--font-libre-baskerville",
   weight: "400"
 });
 
+const ebGaramond = EB_Garamond({
+  subsets: ["latin"],
+  variable: "--font-eb-garamond",
+  weight: "400"
+});
 
 
 export const metadata = {
@@ -20,7 +25,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body
-        className={`${libreBaskerville.variable} ${libreBaskerville.variable} antialiased`}
+        className={`${ebGaramond.variable} ${ebGaramond.variable} antialiased`}
       >
        <UserProvider>
           <AuthGuard>

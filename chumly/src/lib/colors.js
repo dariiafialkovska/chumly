@@ -1,7 +1,7 @@
 // lib/colors.js - Centralized Color System
 // Change the PRIMARY_COLOR to easily theme your entire app
 
-const PRIMARY_COLOR = 'indigo'; // Change this to: blue, purple, green, orange, etc.
+const PRIMARY_COLOR = 'teal'; // Change this to: blue, purple, green, orange, etc.
 
 export const colors = {
   // Primary color variations
