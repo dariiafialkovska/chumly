@@ -3,13 +3,23 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Calendar, Users, MapPin, CreditCard, Home, User, X } from 'lucide-react';
+import {
+  Calendar,
+  Users,
+  MapPin,
+  CreditCard,
+  Home,
+  User,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { colors, componentStyles } from '@/lib/colors';
 import { useUser } from '@/contexts/UserContext';
 
-const Sidebar = ({ isOpen, onClose }) => {
+export default function Sidebar({ isOpen, onClose, collapsed, setCollapsed }) {
   const pathname = usePathname();
   const user = useUser();
 
@@ -32,24 +42,38 @@ const Sidebar = ({ isOpen, onClose }) => {
       )}
 
       {/* Sidebar */}
-      <div className={`
-        fixed left-0 top-0 h-full bg-white border-r border-${colors.gray[200]} z-50 transition-transform duration-300
-        ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-        w-64 lg:w-16 lg:hover:w-64 lg:transition-all lg:duration-300 group
-      `}>
-        <div className="flex flex-col h-full">
+      <div
+        className={`
+          fixed top-0 left-0 h-full bg-white border-r border-${colors.gray[200]} z-50
+          transition-all duration-300
+          ${collapsed ? 'w-16' : 'w-64'}
+        `}
+      >
+        <div className="flex flex-col h-full relative">
+          {/* Collapse toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed(!collapsed)}
+            className="absolute -right-4 top-4 z-50 bg-white border border-gray-200 shadow hidden lg:flex"
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </Button>
+
           {/* Header */}
           <div className={`p-4 border-b border-${colors.gray[100]} flex items-center justify-between`}>
             <div className="flex items-center space-x-3">
               <div className={`w-10 h-10 bg-gradient-to-br ${colors.gradients.primary} rounded-xl flex items-center justify-center shadow-lg`}>
                 <Calendar className="w-5 h-5 text-white" />
               </div>
-              <div className="lg:group-hover:block lg:hidden block">
-                <h1 className={`font-bold text-${colors.gray[900]} text-lg`} style={{ fontFamily: 'Libre Baskerville, serif' }}>
-                  Chumly
-                </h1>
-                <p className={`text-xs text-${colors.gray[500]}`}>Organize together</p>
-              </div>
+              {!collapsed && (
+                <div>
+                  <h1 className={`font-bold text-${colors.gray[900]} text-lg`} style={{ fontFamily: 'Libre Baskerville, serif' }}>
+                    Chumly
+                  </h1>
+                  <p className={`text-xs text-${colors.gray[500]}`}>Organize together</p>
+                </div>
+              )}
             </div>
             <Button
               variant="ghost"
@@ -68,7 +92,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               return (
                 <Link href={item.href} key={index}>
                   <Button
-                    variant={isActive ? "secondary" : "ghost"}
+                    variant={isActive ? 'secondary' : 'ghost'}
                     className={`
                       w-full justify-start h-12 text-left
                       ${isActive
@@ -78,16 +102,18 @@ const Sidebar = ({ isOpen, onClose }) => {
                     `}
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />
-                    <span className="ml-3 font-medium lg:group-hover:block lg:hidden block">
-                      {item.label}
-                    </span>
-                    {item.count && (
-                      <Badge
-                        variant="secondary"
-                        className={`ml-auto lg:group-hover:block lg:hidden block bg-${colors.gray[100]} text-${colors.gray[600]} text-xs`}
-                      >
-                        {item.count}
-                      </Badge>
+                    {!collapsed && (
+                      <>
+                        <span className="ml-3 font-medium">{item.label}</span>
+                        {item.count && (
+                          <Badge
+                            variant="secondary"
+                            className={`ml-auto bg-${colors.gray[100]} text-${colors.gray[600]} text-xs`}
+                          >
+                            {item.count}
+                          </Badge>
+                        )}
+                      </>
                     )}
                   </Button>
                 </Link>
@@ -95,22 +121,22 @@ const Sidebar = ({ isOpen, onClose }) => {
             })}
           </nav>
 
-          {/* User Section */}
+          {/* User Info */}
           <div className={`p-3 border-t border-${colors.gray[100]}`}>
             <div className={`flex items-center space-x-3 p-2 rounded-lg hover:bg-${colors.gray[50]} cursor-pointer`}>
               <div className={`w-8 h-8 bg-gradient-to-br ${colors.gradients.primary} rounded-full flex items-center justify-center`}>
                 <User className="w-4 h-4 text-white" />
               </div>
-              <div className="lg:group-hover:block lg:hidden block flex-1">
-                <p className={`text-sm font-medium text-${colors.gray[900]}`}>{user?.name || 'Guest'}</p>
-                <p className={`text-xs text-${colors.gray[500]}`}>{user?.email || ''}</p>
-              </div>
+              {!collapsed && (
+                <div className="flex-1">
+                  <p className={`text-sm font-medium text-${colors.gray[900]}`}>{user?.name || 'Guest'}</p>
+                  <p className={`text-xs text-${colors.gray[500]}`}>{user?.email || ''}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
     </>
   );
-};
-
-export default Sidebar;
+}

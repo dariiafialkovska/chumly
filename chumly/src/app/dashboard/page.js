@@ -7,8 +7,6 @@ import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import Sidebar from '@/components/layout/Sidebar';
-import Header from '@/components/layout/Header';
 import EventCard from '@/components/cards/EventCard';
 import StatsCard from '@/components/cards/StatsCard';
 import QuickActions from '@/components/dashboard/QuickActions';
@@ -17,10 +15,9 @@ import { useSearchParams } from 'next/navigation';
 import CompleteProfileModal from '@/components/auth/CompleteProfileModal';
 import { useUser } from '@/contexts/UserContext';
 import { query, where } from 'firebase/firestore';
-
+import AppShell from '@/components/layout/AppShell';
 
 const Dashboard = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = useUser();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -98,14 +95,12 @@ const Dashboard = () => {
 
   return (
     <>
+      <AppShell>
       <div className={`min-h-screen bg-${colors.gray[50]}`} style={{ fontFamily: 'Libre Baskerville, serif' }}>
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
+
+
 
         <div className="lg:ml-16 transition-all duration-300">
-          <Header onMenuClick={() => setSidebarOpen(true)} />
 
           <main className="p-4 lg:p-6 space-y-6">
             {/* Welcome Section */}
@@ -170,6 +165,7 @@ const Dashboard = () => {
           onClose={() => setShowProfileModal(false)}
         />
       )}
+      </AppShell>
     </>
   );
 };
