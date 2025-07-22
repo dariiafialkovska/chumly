@@ -36,16 +36,16 @@ const QuickActions = () => {
 
   return (
     <>
-      <h2 className={`text-xl font-semibold text-${colors.gray[900]} mb-4`}>Quick Actions</h2>
+      <h2 className={`text-xl text-${colors.gray[900]} mb-4`}>Quick Actions</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {actions.map((action, index) => (
           <Button
             key={index}
             onClick={action.action}
-            className={`h-28 flex-col justify-center items-center space-y-2 bg-white text-${colors.gray[700]} border hover:bg-${colors.gray[50]}`}
+            className={`h-28 flex-col justify-center items-center space-y-2 shadow-md bg-slate-50 text-${colors.gray[700]} border-0 hover:bg-slate-200`}
           >
-            <action.icon className="w-5 h-5" />
-            <span className="text-sm">{action.label}</span>
+            <action.icon className="w-10 h-10" />
+            <span className="text-md">{action.label}</span>
           </Button>
         ))}
       </div>

@@ -45,11 +45,11 @@ const EventCard = ({ title, startDate, location, attendees, amount, status }) =>
   const attendeeCount = Array.isArray(attendees) ? attendees.length : attendees || 0;
 
   return (
-    <Card className={`${componentStyles.cardHover} ${componentStyles.statsCard}`}>
-      <CardContent className="p-4">
+    <Card className="bg-slate-500 hover:bg-slate-300 transition-colors duration-200 text-slate-200 hover:text-slate-600">
+      <CardContent className="p-6">
         <div className="flex items-start justify-between mb-3">
           <h3 
-            className={`font-semibold text-${colors.gray[900]} text-sm`} 
+            className={` text-3xl`} 
             style={{ fontFamily: 'Libre Baskerville, serif' }}
           >
             {title || 'Untitled Event'}
@@ -61,7 +61,7 @@ const EventCard = ({ title, startDate, location, attendees, amount, status }) =>
           )}
         </div>
 
-        <div className={`space-y-2 text-sm text-${colors.gray[600]}`}>
+        <div className={`space-y-2 text-sm `}>
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4" />
             <span>{formattedDate}</span>
@@ -85,7 +85,7 @@ const EventCard = ({ title, startDate, location, attendees, amount, status }) =>
               <span>{attendeeCount} attending</span>
             </div>
             {amount !== undefined && amount !== null && (
-              <div className={`flex items-center space-x-1 text-${colors.success[600]} font-medium`}>
+              <div className={`flex items-center space-x-1  font-medium`}>
                 <CreditCard className="w-4 h-4" />
                 <span>${amount}</span>
               </div>

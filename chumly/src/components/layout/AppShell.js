@@ -17,7 +17,6 @@ export default function AppShell({ children }) {
   setCollapsed={setCollapsed}
 />
       <div className={`transition-all duration-300 w-full ${collapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
-        <Header onMenuClick={() => setSidebarOpen(true)} />
         <main className="p-4 lg:p-6 space-y-6">{children}</main>
       </div>
     </div>

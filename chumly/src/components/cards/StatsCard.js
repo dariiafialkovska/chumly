@@ -3,25 +3,21 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { colors, componentStyles } from '@/lib/colors';
 
-const StatsCard = ({ icon: Icon, title, value, subtitle, colorType = "primary" }) => {
-  const colorClasses = {
-    primary: colors.gradients.primary,
-    success: `from-${colors.success[500]} to-${colors.success[600]}`,
-    warning: `from-${colors.warning[500]} to-${colors.warning[600]}`,
-    info: `from-${colors.info[500]} to-${colors.info[600]}`
-  };
+const StatsCard = ({ icon: Icon, title, value, subtitle, }) => {
+ 
 
   return (
-    <Card className={componentStyles.statsCard}>
-      <CardContent className="p-4">
-        <div className="flex items-center space-x-3">
-          <div className={`w-12 h-12 bg-gradient-to-br ${colorClasses[colorType]} rounded-xl flex items-center justify-center shadow-lg`}>
-            <Icon className="w-6 h-6 text-white" />
+    <Card className="bg-slate-200 hover:bg-slate-300 transition-colors duration-200">
+      <CardContent className="p-5">
+        <div className="flex">
+          
+          <div className=' flex-1 space-y-1'>
+            <p className={`text-5xl font-italic text-${colors.gray[900]}`}>{value}</p>
+            <p className={`text-md font-medium text-${colors.gray[600]}`}>{title}</p>
+            {subtitle && <p className={`text-sm text-${colors.gray[500]}`}>{subtitle}</p>}
           </div>
-          <div>
-            <p className={`text-2xl font-bold text-${colors.gray[900]}`}>{value}</p>
-            <p className={`text-sm font-medium text-${colors.gray[600]}`}>{title}</p>
-            {subtitle && <p className={`text-xs text-${colors.gray[500]}`}>{subtitle}</p>}
+          <div className={`w-20 h-20   rounded-xl flex items-center justify-center`}>
+            <Icon className="w-16 h-16 text-slate-500 stroke-1 hover:text-slate-700 transition-colors duration-200" />
           </div>
         </div>
       </CardContent>

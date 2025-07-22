@@ -54,10 +54,10 @@ const Dashboard = () => {
   }, [user, searchParams]);
 
   const stats = [
-    { icon: Calendar, title: "Events", value: events.length.toString(), subtitle: "This month", colorType: "primary" },
-    { icon: Users, title: "Groups", value: "5", subtitle: "Active", colorType: "success" },
-    { icon: CreditCard, title: "Expenses", value: "$342", subtitle: "This month", colorType: "warning" },
-    { icon: MapPin, title: "Locations", value: "8", subtitle: "Saved", colorType: "info" },
+    { icon: Calendar, title: "Events", value: events.length.toString(), subtitle: "This month" },
+    { icon: Users, title: "Groups", value: "5", subtitle: "Active" },
+    { icon: CreditCard, title: "Expenses", value: "$342", subtitle: "This month" },
+    { icon: MapPin, title: "Locations", value: "8", subtitle: "Saved" },
   ];
 
 
@@ -96,77 +96,77 @@ const Dashboard = () => {
   return (
     <>
       <AppShell>
-      <div className={`min-h-screen bg-${colors.gray[50]}`} style={{ fontFamily: 'Libre Baskerville, serif' }}>
+        <div className={`min-h-screen bg-${colors.gray[50]}`} style={{ fontFamily: 'Libre Baskerville, serif' }}>
 
 
 
-        <div className="lg:ml-16 transition-all duration-300">
+          <div className="lg:ml-16 transition-all duration-300">
 
-          <main className="p-4 lg:p-6 space-y-6">
-            {/* Welcome Section */}
-            <div className={`bg-gradient-to-r ${colors.gradients.primaryDark} rounded-2xl p-6`}>
-              <h1 className="text-4xl font-bold mb-2 text-teal-900">Welcome back, {user?.name || 'User'}!</h1>
-              {/*<p className={`text-${colors.primary[100]}`}>
+            <main className="p-4 lg:p-6 space-y-6">
+              {/* Welcome Section */}
+              <div className={`bg-gradient-to-r ${colors.gradients.primaryDark} rounded-2xl py-6`}>
+                <h1 className="text-4xl font-bold mb-2 text-slate-900">Welcome back, {user?.name || 'User'}!</h1>
+                {/*<p className={`text-${colors.primary[100]}`}>
                 You have {upcomingEventsCount} upcoming {upcomingEventsCount === 1 ? 'event' : 'events'} and {pendingExpensesCount} pending {pendingExpensesCount === 1 ? 'expense' : 'expenses'} to settle.
               </p>*/}
-<p className={`text-${colors.primary[100]}`}>
-                Your next gathering starts here — let’s do it.
-              </p>
-            </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {stats.map((stat, index) => (
-                <StatsCard key={index} {...stat} />
-              ))}
-            </div>
-
-            {/* Recent Events */}
-
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className={`text-xl font-semibold text-${colors.gray[900]}`}>Recent Events</h2>
-                <Button
-                  variant="outline"
-                  className={`text-${colors.primary[500]} border-${colors.primary[500]}`}
-                  onClick={() => window.location.href = '/events'}
-                >
-                  View All
-                </Button>
+                <p className={`text-${colors.primary[100]}`}>
+                  Your next gathering starts here — let’s do it.
+                </p>
               </div>
-
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {events.map((event, index) => (
-                  <Link
-                    href={`/events/${event.id}`}
-                    key={event.id || index}
-                    className="block"
-                  >
-                    <EventCard
-                      title={event.name || 'Untitled'}
-                      startDate={event.startDate}
-                      location={event.location}
-                      attendees={event.attendees}
-                      amount={event.amount}
-                      status={event.status}
-                    />
-                  </Link>
+              {/* Quick Actions */}
+              <QuickActions />
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {stats.map((stat, index) => (
+                  <StatsCard key={index} {...stat} />
                 ))}
               </div>
-            </div>
 
-            {/* Quick Actions */}
-            <QuickActions />
-          </main>
+              {/* Recent Events */}
+
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className={`text-xl  text-${colors.gray[900]}`}>Your Recent Events</h2>
+                  <Button
+                    variant="outline"
+                    className={`text-${colors.primary[500]} border-${colors.primary[500]}`}
+                    onClick={() => window.location.href = '/events'}
+                  >
+                    View All
+                  </Button>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {events.map((event, index) => (
+                    <Link
+                      href={`/events/${event.id}`}
+                      key={event.id || index}
+                      className="block"
+                    >
+                      <EventCard
+                        title={event.name || 'Untitled'}
+                        startDate={event.startDate}
+                        location={event.location}
+                        attendees={event.attendees}
+                        amount={event.amount}
+                        status={event.status}
+                      />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+
+            </main>
+          </div>
         </div>
-      </div>
-      {user && (
-        <CompleteProfileModal
-          user={user}
-          open={showProfileModal}
-          onClose={() => setShowProfileModal(false)}
-        />
-      )}
+        {user && (
+          <CompleteProfileModal
+            user={user}
+            open={showProfileModal}
+            onClose={() => setShowProfileModal(false)}
+          />
+        )}
       </AppShell>
     </>
   );
