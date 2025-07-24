@@ -33,18 +33,27 @@ export default function Sidebar({ isOpen, onClose, collapsed, setCollapsed }) {
 
   return (
     <>
-      {/* Mobile Menu Drawer */}
-      {isOpen && (
-        <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl p-4 flex flex-col lg:hidden transition-transform duration-300 transform translate-x-0">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-teal-800">Chumly</h2>
+      {/* ✅ MOBILE SIDEBAR DRAWER */}
+      <div className={`fixed inset-0 z-50 lg:hidden ${isOpen ? 'visible' : 'invisible pointer-events-none'}`}>
+        {/* Overlay */}
+        <div
+          className={`absolute inset-0 bg-black/40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+          onClick={onClose}
+        />
+        {/* Drawer Panel */}
+        <div
+          className={`absolute left-0 top-0 bottom-0 w-64 bg-white shadow-xl transform transition-transform duration-300 ${
+            isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+            <h2 className="text-xl font-semibold text-slate-800">Chumly</h2>
             <Button variant="ghost" size="icon" onClick={onClose}>
               <X className="w-5 h-5" />
             </Button>
           </div>
 
-          {/* Mobile Navigation */}
-          <nav className="flex-1 space-y-2">
+          <nav className="flex-1 p-4 space-y-2">
             {menuItems.map((item, index) => {
               const isActive = pathname === item.href;
               return (
@@ -60,7 +69,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, setCollapsed }) {
                     {item.count && (
                       <Badge
                         variant="secondary"
-                        className={`ml-auto bg-${colors.gray[100]} text-${colors.gray[600]} text-xs`}
+                        className={`ml-auto bg-${colors.gray[100]} text-${colors.gray[600]} text-md`}
                       >
                         {item.count}
                       </Badge>
@@ -71,8 +80,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, setCollapsed }) {
             })}
           </nav>
 
-          {/* Mobile User Info */}
-          <div className="mt-6 pt-4 border-t">
+          <div className="p-4 border-t border-slate-200">
             <div className="flex items-center space-x-3">
               <div className={`w-8 h-8 bg-gradient-to-br ${colors.gradients.primary} rounded-full flex items-center justify-center`}>
                 <User className="w-4 h-4 text-white" />
@@ -84,24 +92,23 @@ export default function Sidebar({ isOpen, onClose, collapsed, setCollapsed }) {
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-
-      {/* Sidebar */}
+      {/* ✅ DESKTOP SIDEBAR */}
       <div
         className={`
-          fixed top-0 left-0 h-full bg-white border-r border-${colors.gray[200]} z-50
+          hidden lg:flex fixed top-0 left-0 h-full bg-white border-r border-${colors.gray[200]} z-40
           transition-all duration-300
           ${collapsed ? 'w-16' : 'w-64'}
         `}
       >
-        <div className="flex flex-col h-full relative">
+        <div className="flex flex-col h-full relative w-full">
           {/* Collapse toggle */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setCollapsed(!collapsed)}
-            className="absolute -right-4 top-4 z-50 bg-white border border-gray-200 shadow hidden lg:flex"
+            className="absolute -right-4 bottom-24 z-50 bg-white border border-gray-200 shadow hidden lg:flex"
           >
             {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
           </Button>
@@ -116,21 +123,11 @@ export default function Sidebar({ isOpen, onClose, collapsed, setCollapsed }) {
               </div>
               {!collapsed && (
                 <div>
-                  <h1 className={`font-bold text-slate-800 text-4xl`}>
-                    Chumly
-                  </h1>
-                  <p className={`text-md text-${colors.gray[500]}`}>Organize together</p>
+                  <h1 className="font-bold text-slate-800 text-xl">Chumly</h1>
+                  <p className={`text-sm text-${colors.gray[500]}`}>Organize together</p>
                 </div>
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="lg:hidden"
-            >
-              <X className="w-4 h-4" />
-            </Button>
           </div>
 
           {/* Navigation */}
@@ -145,18 +142,17 @@ export default function Sidebar({ isOpen, onClose, collapsed, setCollapsed }) {
                       w-full justify-start h-12 text-left
                       ${isActive
                         ? `${componentStyles.secondaryButton} shadow-sm`
-                        : `text-${colors.gray[600]} hover:text-${colors.gray[900]} hover:bg-${colors.gray[50]}`
-                      }
+                        : `text-${colors.gray[600]} hover:text-${colors.gray[900]} hover:bg-${colors.gray[50]}`}
                     `}
                   >
                     <item.icon className="w-5 h-5 flex-shrink-0" />
                     {!collapsed && (
                       <>
-                        <span className="ml-3 font-medium">{item.label}</span>
+                        <span className="ml-3 text-base">{item.label}</span>
                         {item.count && (
                           <Badge
                             variant="secondary"
-                            className={`ml-auto bg-${colors.gray[100]} text-${colors.gray[600]} text-xs`}
+                            className={`ml-auto bg-${colors.gray[100]} text-${colors.gray[600]} text-md`}
                           >
                             {item.count}
                           </Badge>
@@ -169,7 +165,7 @@ export default function Sidebar({ isOpen, onClose, collapsed, setCollapsed }) {
             })}
           </nav>
 
-          {/* User Info */}
+          {/* User info */}
           <div className={`p-3 border-t border-${colors.gray[100]}`}>
             <div className={`flex items-center space-x-3 p-2 rounded-lg hover:bg-${colors.gray[50]} cursor-pointer`}>
               <div className={`w-8 h-8 bg-gradient-to-br ${colors.gradients.primary} rounded-full flex items-center justify-center`}>

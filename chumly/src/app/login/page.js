@@ -41,16 +41,19 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      const provider = new GoogleAuthProvider();
-      const cred = await signInWithPopup(auth, provider);
-      const isNewUser = await ensureUserInFirestore(cred.user);
-      router.push(isNewUser ? '/dashboard?newUser=true' : redirectPath);
-    } catch (err) {
-      setError('Google sign-in failed');
-    }
-  };
+const handleGoogleLogin = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const cred = await signInWithPopup(auth, provider);
+    const isNewUser = await ensureUserInFirestore(cred.user);
+    const redirectPath = getRedirectPath(); // ✅ Fix
+    router.push(isNewUser ? '/dashboard?newUser=true' : redirectPath);
+  } catch (err) {
+    console.error(err); // <-- Always log the real error!
+    setError('Google sign-in failed');
+  }
+};
+
 
   const ensureUserInFirestore = async (user) => {
     const userRef = doc(db, 'users', user.uid);

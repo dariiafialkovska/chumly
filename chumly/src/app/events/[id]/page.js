@@ -198,7 +198,7 @@ export default function EventDetailsPage() {
   return (
     <AppShell>
       <div className="max-w-4xl mx-auto mt-10 px-4 space-y-6">
-        <div className="bg-white p-6 rounded-xl shadow-md flex flex-col sm:flex-row sm:items-start sm:justify-between">
+        <div className="p-6 rounded-sm shadow-xs flex flex-col sm:flex-row sm:items-start sm:justify-between bg-slate-100">
           <div className="space-y-1 flex-1">
             {editing ? (
               <div className="space-y-4">
@@ -230,11 +230,9 @@ export default function EventDetailsPage() {
               </div>
             ) : (
               <>
-                <h1 className="text-2xl font-bold text-gray-900">{event.name}</h1>
-                <p className="text-sm text-gray-600">{event.description || 'No description provided.'}</p>
-                <p className="text-sm text-gray-600">
-                  📅 {event.startDate?.toDate().toLocaleDateString() || 'No date'}
-                </p>
+                <h1 className="text-4xl font-bold text-gray-900">{event.name}</h1>
+                <p className="text-xl text-gray-600">{event.description || 'No description provided.'}</p>
+
 
               </>
             )}
@@ -251,31 +249,36 @@ export default function EventDetailsPage() {
                 <option value="completed">Completed</option>
               </select>
             ) : (
-              <Badge
-                variant="outline"
-                className={`capitalize border-${colors.gray[200]} text-${colors.gray[600]}`}
-              >
-                {event.status}
-              </Badge>
+              <>
+
+                <p className="text-xl text-gray-600 pb-3">
+                  Date of Event - {event.startDate?.toDate().toLocaleDateString() || 'No date'}
+                </p>
+                <Badge
+                  variant="outline"
+                  className={`capitalize border-${colors.gray[200]} text-${colors.gray[600]}`}
+                >
+                  {event.status}
+                </Badge>
+
+              </>
             )}
-            <p className="text-xs text-gray-400">
-              Created {event.createdAt?.toDate?.().toLocaleDateString() || 'N/A'}
-            </p>
+
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-4 rounded-lg shadow-sm space-y-2">
-            <p className="text-xs text-gray-400">Created By</p>
+            <p className="text-base text-gray-400">Created By</p>
             <p className="font-medium text-gray-800">{event.createdByUser?.name || 'Unknown'}</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm space-y-2">
-            <p className="text-xs text-gray-400">Attendees</p>
+            <p className="text-base text-gray-400">Attendees</p>
             <div className="flex flex-wrap gap-2">
               {event.attendeesDetailed?.map((user, i) => (
                 <div
                   key={i}
-                  className="bg-indigo-100 text-indigo-700 text-xs px-3 py-1 rounded-full font-medium"
+                  className="text-slate-700 font-medium"
                 >
                   {user.name}
                 </div>
@@ -294,11 +297,11 @@ export default function EventDetailsPage() {
         </Button>
 
         {event.sections?.expenses && (
-          <div className="bg-white p-5 rounded-xl shadow-md">
+          <div className="bg-white/60 border border-slate-200 rounded-xl shadow backdrop-blur-sm p-6">
             <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <CreditCard className="text-indigo-500" />
-                <p className="text-gray-700 font-semibold">Expenses</p>
+              <div className="flex items-center gap-2 text-slate-700 font-semibold text-lg">
+                <CreditCard className="w-5 h-5 text-slate-400" />
+                <span>Expenses</span>
               </div>
               <Button onClick={() => setExpenseModalOpen(true)}>+ Add Expense</Button>
             </div>
@@ -334,11 +337,11 @@ export default function EventDetailsPage() {
           </div>
         )}
         {event.sections?.reservations && (
-          <div className="bg-white p-5 rounded-xl shadow-md">
+          <div className="bg-white/60 border border-slate-200 rounded-xl shadow backdrop-blur-sm p-6">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
-                <Calendar className="text-blue-500" />
-                <p className="text-gray-700 font-semibold">Reservations</p>
+                <Calendar className="text-slate-500" />
+                <p className="text-gray-700 font-semibold text-xl">Reservations</p>
               </div>
               <Button onClick={() => setReservationModalOpen(true)}>+ Add Reservation</Button>
             </div>
@@ -370,7 +373,7 @@ export default function EventDetailsPage() {
         )}
 
         {event.sections?.checklist && (
-          <div className="bg-white p-5 rounded-xl shadow-md">
+          <div className="bg-white/60 border border-slate-200 rounded-xl shadow backdrop-blur-sm p-6">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <span className="text-lg font-semibold text-gray-700">📝 Checklist</span>
@@ -404,7 +407,7 @@ export default function EventDetailsPage() {
         )}
 
         {event.sections?.notes && (
-          <div className="bg-white p-5 rounded-xl shadow-md">
+          <div className="bg-white/60 border border-slate-200 rounded-xl shadow backdrop-blur-sm p-6">
             <div className="flex justify-between items-center mb-4">
               <div className="flex items-center gap-2">
                 <p className="text-gray-700 font-semibold">📝 Notes</p>
